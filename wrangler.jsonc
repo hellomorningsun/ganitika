@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "mathesis-teacher",
+  "name": "ganitika",
   "main": "src/worker.js",
   "compatibility_date": "2025-09-01",
   // The teacher app's own address. ganitika.org must be in the same Cloudflare account.
