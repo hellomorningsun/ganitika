@@ -16,7 +16,7 @@
       "binding": "DB",
       "database_name": "mathesis",
       // Replace with the id printed by `npx wrangler d1 create mathesis`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "bb65f204-6332-4115-b10f-c23fd684d43e",
       "migrations_dir": "migrations"
     }
   ]
