@@ -191,3 +191,11 @@ progress { width: 100%; height: 8px; margin: 4px 0 8px; }
   .top-actions { flex-wrap: wrap; }
   .btn.subtle { padding: 8px 6px; }
 }
+
+/* Keyword picker (shared list in keywords.js) */
+.kw-field { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px 12px; margin: 0 0 12px; }
+.kw-field legend { padding: 0 4px; font-weight: 600; }
+.kw-picker { display: grid; gap: 10px; max-height: 260px; overflow: auto; }
+.kw-group-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 4px; }
+.chip.kw { padding: 4px 12px; }
+.chip.kw.active::before { content: '✓ '; }

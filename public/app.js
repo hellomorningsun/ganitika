@@ -171,6 +171,88 @@ function showError(sel, err) {
   $(sel).hidden = !err;
 }
 
+// ---------- keyword picker (the shared list in keywords.js) ----------
+
+// The live list is on the student site, so new tools there show up here with no upload of this app.
+const KEYWORDS_URL = 'https://ganitika.org/keywords.json';
+
+function makeKeywords(list) {
+  const byName = new Map(list.map((k) => [k.name.trim().toLowerCase(), k]));
+  return { list, find: (name) => byName.get(String(name).trim().toLowerCase()) || null };
+}
+let KW = globalThis.GANITIKA_KEYWORDS; // built-in fallback (keywords.js)
+const pickers = {};
+const isKeyword = (t) => !!KW.find(t);
+
+async function loadKeywords() {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch(KEYWORDS_URL, { cache: 'no-cache', signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const list = (await res.json()).keywords;
+    if (!Array.isArray(list)) throw new Error('No keyword list');
+    const clean = list.filter((k) => k && typeof k.name === 'string' && k.name.trim()).map((k) => ({ name: k.name.trim(), group: String(k.group || 'Other') }));
+    if (!clean.length) throw new Error('Empty keyword list');
+    KW = makeKeywords(clean);
+    Object.values(pickers).forEach((p) => p.rebuild());
+  } catch (err) {
+    console.warn('Using the built-in keyword list; could not load', KEYWORDS_URL, err);
+  }
+}
+
+function setupKeywordPicker(key) {
+  const box = document.querySelector(`.kw-picker[data-for="${key}"]`);
+  const chosen = new Set(); // keyword names, as written in the list
+  const build = () => {
+    const groups = [];
+    for (const k of KW.list) {
+      let g = groups.find((x) => x.name === k.group);
+      if (!g) groups.push((g = { name: k.group, items: [] }));
+      g.items.push(k);
+    }
+    box.innerHTML = groups.map((g) => `<div class="kw-group"><div class="kw-group-name">${escapeHtml(g.name)}</div><div class="chips">${
+      g.items.map((k) => `<button type="button" class="chip kw" aria-pressed="false" data-kw="${escapeHtml(k.name)}">${escapeHtml(k.name)}</button>`).join('')
+    }</div></div>`).join('');
+  };
+  build();
+  const paint = () => box.querySelectorAll('[data-kw]').forEach((b) => {
+    const on = chosen.has(b.dataset.kw);
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+  box.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-kw]');
+    if (!b) return;
+    if (chosen.has(b.dataset.kw)) chosen.delete(b.dataset.kw); else chosen.add(b.dataset.kw);
+    paint();
+  });
+  pickers[key] = {
+    rebuild: () => {
+      const keep = [...chosen];
+      build();
+      chosen.clear();
+      for (const t of keep) { const k = KW.find(t); if (k) chosen.add(k.name); }
+      paint();
+    },
+    // Keywords in list order, so the student app shows tools in a steady order.
+    get: () => KW.list.map((k) => k.name).filter((n) => chosen.has(n)),
+    set: (topics) => {
+      chosen.clear();
+      for (const t of topics) { const k = KW.find(t); if (k) chosen.add(k.name); }
+      paint();
+    },
+  };
+}
+
+// A lesson's topics = ticked keywords + other words.
+const getTopics = (key) => [...pickers[key].get(), ...tagInputs[key].get().filter((t) => !isKeyword(t))];
+const setTopics = (key, topics) => {
+  pickers[key].set(topics);
+  tagInputs[key].set(topics.filter((t) => !isKeyword(t)));
+};
+
 // ---------- tag input ----------
 
 const tagInputs = {};
@@ -304,7 +386,7 @@ function openUpload() {
   ytLookup++;
   $('#ytPreview').hidden = true;
   setUploadMode('youtube');
-  tagInputs.up.set(state.topic ? [state.topic] : []);
+  setTopics('up', state.topic ? [state.topic] : []);
   $('#dropText').innerHTML = 'Drop a video here, or click to choose<br><small class="muted">MP4 or WebM play in every browser</small>';
   $('#upFolder').value = state.folder && state.folder !== 'none' ? state.folder : '';
   $('#upLevel').value = state.level;
@@ -324,7 +406,7 @@ async function submitUpload(e) {
     description: $('#upDesc').value,
     folderId: $('#upFolder').value || null,
     level: $('#upLevel').value,
-    topics: tagInputs.up.get(),
+    topics: getTopics('up'),
     published: $('#upPublished').checked,
     durationSec: await readDuration(chosenFile),
   };
@@ -375,7 +457,7 @@ async function submitYouTube() {
         description: $('#upDesc').value,
         folderId: $('#upFolder').value || null,
         level: $('#upLevel').value,
-        topics: tagInputs.up.get(),
+        topics: getTopics('up'),
         published: $('#upPublished').checked,
       }),
     });
@@ -411,7 +493,7 @@ function openVideo(id) {
   $('#edFolder').value = v.folderId || '';
   $('#edLevel').value = v.level;
   $('#edPublished').checked = v.published;
-  tagInputs.ed.set(v.topics);
+  setTopics('ed', v.topics);
   $('#edInfo').textContent = [
     yt ? 'YouTube' : v.originalName,
     !yt && formatSize(v.size),
@@ -432,7 +514,7 @@ async function saveVideo(e) {
         description: $('#edDesc').value,
         folderId: $('#edFolder').value || null,
         level: $('#edLevel').value,
-        topics: tagInputs.ed.get(),
+        topics: getTopics('ed'),
         published: $('#edPublished').checked,
       }),
     });
@@ -596,6 +678,9 @@ async function changePassword(e) {
 function init() {
   setupTagInput('up');
   setupTagInput('ed');
+  setupKeywordPicker('up');
+  setupKeywordPicker('ed');
+  loadKeywords();
 
   $('#openUpload').onclick = openUpload;
   $('#authForm').onsubmit = submitAuth;

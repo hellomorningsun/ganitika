@@ -98,9 +98,13 @@
         <div class="field"><label for="upFolder">Folder</label><select id="upFolder"></select></div>
         <div class="field"><label for="upLevel">Class</label><select id="upLevel"></select></div>
       </div>
+      <fieldset class="field kw-field">
+        <legend>Keywords <small class="muted">(tick what this lesson teaches; students get the matching tools and pages beside the video)</small></legend>
+        <div class="kw-picker" data-for="up"></div>
+      </fieldset>
       <div class="field">
-        <label for="upTopics">Topics <small class="muted">(press Enter or comma after each)</small></label>
-        <div class="tag-input" data-for="up"><input id="upTopics" list="topicSuggestions" placeholder="e.g. Fractions, Algebra"></div>
+        <label for="upTopics">Other words <small class="muted">(optional, only for searching; press Enter after each)</small></label>
+        <div class="tag-input" data-for="up"><input id="upTopics" list="topicSuggestions" placeholder="e.g. Chapter 3, revision"></div>
       </div>
       <label class="check"><input id="upPublished" type="checkbox" checked> Visible to students</label>
       <progress id="upProgress" max="100" value="0" hidden></progress>
@@ -124,8 +128,12 @@
         <div class="field"><label for="edFolder">Folder</label><select id="edFolder"></select></div>
         <div class="field"><label for="edLevel">Class</label><select id="edLevel"></select></div>
       </div>
+      <fieldset class="field kw-field">
+        <legend>Keywords <small class="muted">(students get the matching tools and pages beside the video)</small></legend>
+        <div class="kw-picker" data-for="ed"></div>
+      </fieldset>
       <div class="field">
-        <label for="edTopics">Topics</label>
+        <label for="edTopics">Other words <small class="muted">(only for searching)</small></label>
         <div class="tag-input" data-for="ed"><input id="edTopics" list="topicSuggestions"></div>
       </div>
       <label class="check"><input id="edPublished" type="checkbox"> Visible to students</label>
@@ -173,6 +181,7 @@
 
   <datalist id="topicSuggestions"></datalist>
   <div id="toast" class="toast" role="status" hidden></div>
+  <script src="keywords.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
